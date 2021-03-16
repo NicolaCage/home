@@ -1,39 +1,32 @@
-# Introduction
+# resume-generator
+A resume generator
 
-简历为仿写，原简历页面地址: [张秋怡 - 个人简历](https://joyeecheung.github.io/resume/) 【原主人已删除】
+## 关于
+一开始发现这个网站[hacknical](https://hacknical.com/)可以在线写简历，预览效果不错，但是下载的PDF简历有问题，所以就想着自己写个工具。主要思路：用`pug`编写简历模版，读取`resume.json`里定义的简历数据并渲染进模版，`scss`（`CSS`预处理器）编写简历样式。项目参考了[张秋怡](https://github.com/joyeecheung)的部分实现（原仓库已删除）。
 
-简历基于 Gulp+Scss+Jade。
-访问地址：[LeoTian 的简历](https://resume.leotian.cn)
+## 预览
+[查看PDF](./src/pdf/resume.pdf)
+![截图](./screenshot/截图.png)
 
-### 要求
+## 环境准备
+`Node.js >= 8.9.0`
 
-**Node 8.9.0 及以上**
-
-## 启动
-
-使用 `npm install` 安装
-
-**npm + 国内源** 可能会出现 chrome 安装的问题，推荐使用 `cnpm` 或者 `npm` + 原版源的方式
-
-### 特点
-
-自动生成 PDF 版简历
-
-在 generate_pdf 与 info.json 中，替换 LxxyxResume.pdf 为你自己想要的名字
-
-生成 PDF 的命令：
-
-```bash
-npm run pdf
+## 安装
+```
+npm install --global gulp-cli
+```
+```
+# 安装依赖
+npm install
 ```
 
-### 运行方式：
-
-替换 info.json 的内容，运行`gulp`即可。
-生成内容可在 dist 文件夹查看。
-
-需要自动部署的，运行`gulp deploy`即可，需要在 gulpfile 中更改为你的地址（！会抹去你 github pages 内容，慎用！）
-
-### 自定义域名
-
-修改 CNAME 文件，替换为你的域名即可
+## 使用
+简历数据存储在`resume.json`，可自行修改
+```
+# 本地预览
+gulp dev
+```
+```
+# 生成PDF简历
+gulp pdf
+```

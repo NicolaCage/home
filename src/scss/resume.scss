@@ -1,8 +1,6 @@
 @import "_include-media.scss";
-@import "components/aside.scss";
-@import "components/header.scss";
-@import "components/content.scss";
-@import "components/footer.scss";
+@import "./components/content.scss";
+
 * {
   box-sizing: border-box;
 }
@@ -10,47 +8,53 @@
 ul {
   margin: 0;
   padding: 0;
-  list-style-type: none;
 }
 
-h3 {
-  font-size: 20px;
-}
-
-body {
-  font-family: "Helvetica Neue", "Arial", "PingFang SC", "Hiragino Sans GB",
-    "STHeiti", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
-  background: #e0e0e0;
+html, body {
+  font-family: Open Sans, -apple-system, BlinkMacSystemFont, PingFang SC, PingFangSC, Helvetica Neue, "微软雅黑", "Microsoft YaHei", sans-serif;
+  background: #f7f8f9;
   -webkit-font-smoothing: antialiased;
+
+  @include media("print") {
+    background-color: #ffffff;
+  }
 }
 
-a,
-strong {
+a {
   color: teal;
 }
 
-strong {
-  font-weight: 700;
-}
-
 .container {
-  margin-top: 10px;
-  margin-right: auto;
-  margin-left: auto;
-  box-shadow: 2px 2px 5px;
+  margin: 50px auto;
+  box-shadow: 1px 1px 2px 0 rgba(0, 0, 0, .1);
+  background: #fff;
+
   @include media(">=desktop") {
-    width: 970px;
+    width: 800px;
+    padding: 30px 40px;
   }
+
   @include media(">=tablet", "<=desktop") {
     width: 750px;
   }
+
   @include media("<=phone") {
-    margin-top: 0;
+    margin: 0;
     padding: 5px 0;
     box-shadow: 0 0 0;
   }
+
   @include media("print") {
-    margin-top: 0;
+    margin: 0;
     box-shadow: 0 0 0;
+
+    div {
+      break-after: always;
+    }
   }
+}
+
+::-webkit-scrollbar, :hover::-webkit-scrollbar {
+  background: transparent;
+  width: 0;
 }

@@ -1,55 +1,30 @@
 const gulp = require('gulp')
 const sass = require('gulp-sass')
-const autoprefixer = require('gulp-autoprefixer')
-const jade = require('gulp-jade')
-const copy = require('gulp-copy')
-const rimrafPromise = require('rimraf-promise')
-const ghPages = require('gulp-gh-pages')
+const pug = require('gulp-pug')
+const rmfr = require('rmfr')
 const fs = require('fs')
 const connect = require('gulp-connect')
-const generatePdf = require('./generate_pdf')
+const puppeteer = require('puppeteer')
 
 gulp.task('resume-sass', () => {
   gulp
     .src('src/scss/resume.scss')
     .pipe(sass().on('error', sass.logError))
-    .pipe(
-      autoprefixer({
-        browsers: ['last 4 versions'],
-        cascade: false
-      })
-    )
     .pipe(gulp.dest('dist/css/'))
-    .pipe(connect.reload())
-})
-
-gulp.task('icon-sass', () => {
-  gulp
-    .src('src/scss/iconfont.scss')
-    .pipe(sass().on('error', sass.logError))
-    .pipe(
-      autoprefixer({
-        browsers: ['last 4 versions'],
-        cascade: false
-      })
-    )
-    .pipe(gulp.dest('dist/iconfont/'))
     .pipe(connect.reload())
 })
 
 gulp.task('sass:watch', () => {
   gulp.watch('./src/scss/resume.scss', ['resume-sass'])
-  gulp.watch('./src/scss/iconfont.scss', ['icon-sass'])
   gulp.watch('./src/scss/components/*.scss', ['resume-sass'])
 })
 
-gulp.task('json2jade', () => {
-  const info = JSON.parse(fs.readFileSync('./info.json', 'utf-8'))
-  const locals = highlight(info)
+gulp.task('json2pug', () => {
+  const locals = JSON.parse(fs.readFileSync('./resume.json', 'utf-8'))
   gulp
-    .src('./src/jade/index.jade')
+    .src('./src/pug/index.pug')
     .pipe(
-      jade({
+      pug({
         locals
       })
     )
@@ -57,46 +32,31 @@ gulp.task('json2jade', () => {
     .pipe(connect.reload())
 })
 
-gulp.task('json2jade:watch', () => {
-  gulp.watch('./info.json', ['json2jade'])
+gulp.task('json2pug:watch', () => {
+  gulp.watch('./resume.json', ['json2pug'])
+  gulp.watch('./src/pug/*.pug', ['json2pug'])
 })
 
 function src2dist(dir) {
   return gulp.src(`./src/${dir}/*.*`).pipe(gulp.dest(`./dist/${dir}/`))
 }
 
-function highlight(locals) {
-  var locals = JSON.stringify(locals)
-  const re = /`(.+?)`/g
-  locals = locals.replace(re, '<strong>$1</strong>')
-  return JSON.parse(locals)
-}
-
 gulp.task('copy', () => {
-  src2dist('iconfont')
-  src2dist('img')
   src2dist('pdf')
-  gulp.src('./CNAME').pipe(gulp.dest('./dist'))
 })
 
 gulp.task('clean', () => {
-  rimrafPromise('./dist/')
+  rmfr('./dist/')
 })
-
-gulp.task('deploy', () =>
-  gulp.src('./dist/**/*').pipe(
-    ghPages({
-      remoteUrl: 'git@git.dev.tencent.com:tybleo/LeoTianResumeDist.git',
-      branch: 'master'
-    })
-  )
-)
 
 let port = 9000
 
-// 避免打印时，同时运行开发服务报错
 gulp.task('set-pdf-port', () => {
   port = 9001
+})
+
+gulp.task('set-screenshot-port', () => {
+  port = 9002
 })
 
 gulp.task('webserver', () => {
@@ -107,12 +67,65 @@ gulp.task('webserver', () => {
   })
 })
 
-gulp.task('dev', ['default', 'json2jade:watch', 'sass:watch', 'webserver'])
+gulp.task('default', ['resume-sass', 'json2pug', 'copy'])
 
-gulp.task('default', ['icon-sass', 'resume-sass', 'json2jade', 'copy'])
+gulp.task('dev', ['default', 'json2pug:watch', 'sass:watch', 'webserver'])
 
 gulp.task('pdf', ['set-pdf-port', 'default', 'webserver'], async () => {
-  await generatePdf('http://localhost:9001')
+  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+  const page = await browser.newPage()
+
+  // In the case of multiple pages in a single browser, each page can have its own viewport size.
+  await page.setViewport({
+    width: 1440,
+    height: 900
+  })
+
+  // networkidle0 - consider navigation to be finished when there are no more than 0 network connections for at least 500 ms.
+  await page.goto('http://localhost:9001', {waitUntil: 'networkidle0'})
+
+  await page.pdf({
+    path: './src/pdf/resume.pdf',
+    format: 'A4',
+    printBackground: true,
+    displayHeaderFooter: false,
+    margin: {
+      top: 30,
+      right: 40,
+      bottom: 30,
+      left: 40
+    }
+  })
+
+  console.log('PDF已生成, 目录./src/pdf')
+  browser.close()
+
+  connect.serverClose()
+  process.exit(0)
+})
+
+gulp.task('screenshot', ['set-screenshot-port', 'default', 'webserver'], async () => {
+  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+  const page = await browser.newPage()
+
+  // In the case of multiple pages in a single browser, each page can have its own viewport size.
+  await page.setViewport({
+    width: 1440,
+    height: 900
+  })
+
+  // networkidle0 - consider navigation to be finished when there are no more than 0 network connections for at least 500 ms.
+  await page.goto('http://localhost:9002', {waitUntil: 'networkidle0'})
+
+  await page.screenshot({
+    path: './screenshot/screenshot.png',
+    fullPage: true,
+    omitBackground: true
+  })
+
+  console.log('截图已生成, 目录./screenshot')
+  browser.close()
+
   connect.serverClose()
   process.exit(0)
 })
